@@ -1,199 +1,218 @@
-# routesmit
+<p align="center">
+  <h1 align="center">routesmit</h1>
+  <p align="center">
+    <strong>Host-aware auto-routing for coding agents</strong>
+  </p>
+  <p align="center">
+    <a href="https://pypi.org/project/routesmit/"><img src="https://img.shields.io/pypi/v/routesmit?color=blue&label=PyPI" alt="PyPI version"></a>
+    <a href="https://github.com/sidrat2612/routesmith/actions/workflows/ci.yml"><img src="https://github.com/sidrat2612/routesmith/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+    <a href="https://pypi.org/project/routesmit/"><img src="https://img.shields.io/pypi/pyversions/routesmit" alt="Python versions"></a>
+    <a href="https://github.com/sidrat2612/routesmith/blob/main/LICENSE"><img src="https://img.shields.io/github/license/sidrat2612/routesmith" alt="License"></a>
+    <a href="https://github.com/sidrat2612/routesmith/stargazers"><img src="https://img.shields.io/github/stars/sidrat2612/routesmith?style=social" alt="Stars"></a>
+  </p>
+</p>
 
-**Host-aware auto-routing skill library for IDEs and coding agents.**
+---
 
-routesmit improves task execution in coding agent environments by detecting the current host, inspecting its model capabilities, decomposing mixed prompts into subtasks, and routing each step to the best available host-compatible model.
+**routesmit** automatically routes coding agent tasks to the best available model in your IDE — no manual model picking, no cross-provider hacks.
 
-## Why Host-Aware Routing?
+> Give it a mixed prompt like *"Plan this feature, implement it, add tests, write docs"* and it decomposes, routes each step to the right capability class, and executes using your host's native model switching.
 
-Most coding agents run inside a specific host environment (Claude Code, Codex, Copilot, Cursor, Aider). Each host has different:
-- Available model families
-- Model switching capabilities
-- Configuration surfaces
-- Instruction file support
+## Why?
 
-**routesmit does NOT assume all IDEs can freely mix providers.** It inspects what the current host supports, then routes within those constraints.
+Most coding agents are stuck on one model. Mixed tasks (plan → code → test → document) benefit from different model strengths. But each IDE host (Claude Code, Codex, Copilot, Cursor, Aider) has different model families and switching capabilities.
 
-| Host | Model Family | Dynamic Switch | Strategy |
-|------|-------------|----------------|----------|
-| Claude Code | Anthropic only | ✓ | Model switching per task |
-| Codex | OpenAI only | ✓ | Model switching per task |
-| Copilot | Mixed (host-controlled) | ✗ | Prompt optimization |
-| Cursor | Mixed (user-controlled) | ✗ | Prompt optimization |
-| Aider | Mixed | ✓ | Model switching per task |
-| Generic | Unknown | ✗ | Prompt optimization |
+**routesmit solves this** by being host-aware:
 
-## Auto Mode (Default)
+| Host | Models | Strategy |
+|------|--------|----------|
+| Claude Code | Opus / Sonnet / Haiku | Dynamic model switching |
+| Codex | o3 / codex-mini / GPT-4.1 | Dynamic model switching |
+| Copilot | Host-controlled | Prompt optimization |
+| Cursor | User-controlled | Prompt optimization |
+| Aider | Multi-provider | Dynamic model switching |
 
-Auto mode is the default and recommended mode. For a single mixed prompt, routesmit automatically:
-
-1. Detects the host environment
-2. Inspects host model capabilities
-3. Classifies the prompt into task types
-4. Splits it into ordered subtasks
-5. Chooses the best host-compatible model per subtask (when possible)
-6. Executes or recommends the route
-7. Returns a route summary and advisory messages
-
-## Architecture
-
-```
-┌─────────────────────────────────────────┐
-│              CLI / Integration           │
-├─────────────────────────────────────────┤
-│         Core Orchestration Layer         │
-│  Planner → Policy → Router → Executor   │
-├─────────────────────────────────────────┤
-│           Host Adapter Layer             │
-│  detect → capabilities → switch/prompt  │
-└─────────────────────────────────────────┘
-```
-
-### Capability Classes
-
-Instead of hardcoding model names, routesmit uses abstract capability classes:
-
-- **deep_reasoning** — Planning, analysis, review
-- **coding** — Implementation, testing, refactoring
-- **balanced** — Documentation, general tasks
-- **fast** — Formatting, simple transformations
-
-Each host adapter maps these to actual host-supported models.
-
-### Task Types
-
-- `planning` — Design and architecture
-- `analysis` — Research and investigation
-- `coding` — Implementation
-- `testing` — Test creation and validation
-- `refactor` — Code improvement
-- `documentation` — Docs and comments
-- `formatting` — Style and linting
-- `review` — Quality review
-
-## Installation
+## Quickstart
 
 ```bash
 pip install routesmit
 ```
 
-## CLI Usage
-
-```bash
-# Run a prompt through the routing pipeline
-routesmit run "Plan this feature, implement it, add tests, and write docs"
-
-# Explain the route plan without executing
-routesmit explain "Refactor the auth module and add integration tests"
-
-# Detect the current host
-routesmit detect-host
-
-# Show host capabilities
-routesmit capabilities
-
-# Run diagnostics
-routesmit doctor
-
-# Install config for a target host
-routesmit install claude
-routesmit install codex
-routesmit install copilot
-routesmit install cursor
-routesmit install aider
-
-# Start stdio server for tool integration
-routesmit serve-stdio
-```
-
-## Python API
-
 ```python
 import routesmit
 
-# Run a prompt (auto mode)
+# Auto-detect host, decompose, route, execute
 result = routesmit.run("Plan and implement a REST API with tests")
 
-# Explain without executing
+# Just see the plan without executing
 plan = routesmit.explain_route("Refactor the database layer")
 
-# Detect host
+# Check what you're running on
 host = routesmit.detect_host()
-
-# Get capabilities
 caps = routesmit.get_host_capabilities()
 ```
 
-## Environment Variables
+### CLI
+
+```bash
+# Route a prompt
+routesmit run "Plan this feature, implement it, add tests, and write docs"
+
+# Preview the route plan
+routesmit explain "Refactor auth module and add integration tests"
+
+# Diagnostics
+routesmit detect-host
+routesmit capabilities
+routesmit doctor
+```
+
+## How It Works
+
+routesmit is an **advisory routing layer** — it plans and recommends, it does not replace your host's execution engine.
+
+```
+┌─────────────────────────────────────────┐
+│           Your Prompt                   │
+├─────────────────────────────────────────┤
+│  1. Detect host (Claude Code? Copilot?) │
+│  2. Decompose into typed subtasks       │
+│  3. Map tasks → capability classes      │
+│  4. Resolve to host-native models       │
+│  5. Switch models or optimize prompts   │
+│  6. Report metrics & effectiveness      │
+└─────────────────────────────────────────┘
+```
+
+### What it does
+
+- **Decomposes** mixed prompts into discrete, typed subtasks
+- **Routes** each subtask to the best capability class (`deep_reasoning`, `coding`, `balanced`, `fast`)
+- **Switches models** when the host supports it (Claude Code, Codex, Aider)
+- **Falls back to prompt optimization** when the host controls model selection
+- **Reports** timing, token estimates, effectiveness scores
+
+### What it does NOT do
+
+- Does **not** make LLM API calls — the host handles execution
+- Does **not** bypass host constraints — works within your IDE's limits
+- Does **not** fake model switches — tells you honestly what happened
+
+### Design Philosophy
+
+Coding agents run inside a host that owns the LLM connection. routesmit sits *alongside* the host as a skill layer that makes smarter routing decisions. It's the routing brain, not the execution muscle.
+
+## Capability Classes
+
+Instead of hardcoding model names, routesmit uses abstract capability classes:
+
+| Class | Use Case | Example Models |
+|-------|----------|----------------|
+| `deep_reasoning` | Planning, architecture, review | Claude Opus, o3 |
+| `coding` | Implementation, testing, refactoring | Claude Sonnet, codex-mini |
+| `balanced` | Documentation, general tasks | Claude Sonnet, GPT-4.1 |
+| `fast` | Formatting, simple transforms | Claude Haiku, GPT-4.1-mini |
+
+Each host adapter maps these to actual available models.
+
+## Task Types
+
+routesmit classifies prompts into: `planning`, `analysis`, `coding`, `testing`, `refactor`, `documentation`, `formatting`, `review`
+
+Dependencies are resolved automatically — tests wait for code, docs wait for implementation.
+
+## Configuration
+
+### Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `ROUTESMIT_DEFAULT_MODE` | Default execution mode | `auto` |
+| `ROUTESMIT_DEFAULT_MODE` | Execution mode | `auto` |
 | `ROUTESMIT_ALLOW_MODEL_SWITCH` | Allow model switching | `true` |
 | `ROUTESMIT_FORCE_HOST` | Force a specific host | — |
-| `ROUTESMIT_DEFAULT_HOST` | Default host fallback | — |
 | `ROUTESMIT_DEBUG` | Enable debug output | `false` |
-| `ROUTESMIT_ENABLE_TELEMETRY` | Enable telemetry | `false` |
 
-## Model Switching Limits
+### Config File
 
-**routesmit is truthful about model switching:**
+Create `.routesmit.toml` in your project root:
 
-- If a host supports dynamic switching, routesmit will attempt it.
-- If a host does NOT support switching, routesmit will NOT fake it.
-- The run result always indicates whether switching was applied or prompt strategy was used instead.
-- Advisory messages inform the user of any limitations.
+```toml
+[routesmit]
+default_mode = "auto"
+allow_model_switch = true
+```
 
-## Prompt Strategy Fallback
+## MCP / Stdio Server
 
-When a host cannot switch models dynamically, routesmit still provides value:
+routesmit exposes an MCP-compatible JSON-RPC 2.0 server for tool integration:
 
-1. **Task decomposition** — Breaking complex prompts into focused steps
-2. **Dependency ordering** — Ensuring steps execute in correct order
-3. **Prompt optimization** — Structuring each step's prompt for best results
-4. **Capability advisory** — Recommending ideal model classes per step
+```bash
+routesmit serve-stdio
+```
 
-## Pinned Model Behavior
+This lets IDE extensions and agents call routesmit as a tool.
 
-If a user manually pins a model:
-- That choice is honored for all tasks.
-- An advisory message is shown recommending Auto mode for mixed tasks.
+## Install Configs for Hosts
 
-## Supported Hosts
+Generate host-specific configuration files:
 
-### Claude Code
-- Manages Claude-family models (Opus, Sonnet, Haiku)
-- Supports dynamic model switching
-- Uses CLAUDE.md for repo instructions
+```bash
+routesmit install claude    # Writes CLAUDE.md
+routesmit install codex     # Writes AGENTS.md
+routesmit install copilot   # Writes .github/copilot-instructions.md
+routesmit install cursor    # Writes .cursorrules
+routesmit install aider     # Writes .aider.conf.yml
+```
 
-### Codex (OpenAI)
-- Manages OpenAI-family models (o3, codex-mini, GPT-4.1)
-- Supports dynamic model switching via flags
-- Uses AGENTS.md for repo instructions
+## Auto Mode (Default)
 
-### GitHub Copilot
-- Model selection is host-controlled
-- Uses `.github/copilot-instructions.md` and prompt files
-- Applies prompt optimization strategy
+Auto mode is the default. For a single mixed prompt, routesmit:
 
-### Cursor
-- Model selection is user-controlled
-- Uses `.cursorules` for guidance
-- Applies prompt optimization strategy
+1. Detects the host environment
+2. Classifies the prompt into task types
+3. Splits into ordered subtasks with dependency resolution
+4. Chooses the best host-compatible model per subtask
+5. Executes (or recommends) the route
+6. Returns metrics and advisory messages
 
-### Aider
-- Supports multiple providers
-- Model switching via `--model` flag
-- Uses `.aider.conf.yml` for configuration
+### Truthful Switching
+
+- If the host supports dynamic switching → routesmit switches
+- If the host does NOT support switching → routesmit uses prompt strategy
+- The result always tells you exactly what happened — no black boxes
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+```bash
+# Development setup
+git clone https://github.com/sidrat2612/routesmith.git
+cd routesmith
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+pytest
+```
 
 ## Roadmap
 
-- [ ] MCP tool integration
+- [x] Host detection and capability mapping
+- [x] Weighted task decomposition planner
+- [x] Dependency-aware execution loop
+- [x] Persistent route state
+- [x] MCP stdio server
+- [x] Structured observability
 - [ ] Real-time model performance tracking
 - [ ] Cost-aware routing
-- [ ] Custom policy configuration
-- [ ] Plugin system for additional hosts
+- [ ] Custom policy plugins
+- [ ] Additional host adapters
 
 ## License
 
-MIT
+[MIT](LICENSE) — use it anywhere.
+
+---
+
+<p align="center">
+  <sub>Built for the multi-model future of coding agents.</sub>
+</p>
