@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">routesmith</h1>
+  <h1 align="center">RouteSmith</h1>
   <p align="center">
     <strong>Host-aware auto-routing for coding agents</strong>
   </p>
