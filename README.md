@@ -61,6 +61,9 @@ Common CLI commands:
 - Route a mixed task prompt with `routesmith run "Plan this feature, implement it, add tests, and write docs"`.
 - Preview the route plan with `routesmith explain "Refactor auth module and add integration tests"`.
 - Inspect the environment with `routesmith detect-host`, `routesmith capabilities`, and `routesmith doctor`.
+- View performance stats with `routesmith stats`, filter with `--host`, `--capability`, `--source`, or export with `--format json`.
+- Show top/bottom performers with `routesmith stats --top 5 --bottom 3`.
+- Prune old telemetry with `routesmith stats --prune --max-age-days 30`.
 
 ## How It Works
 
@@ -215,6 +218,10 @@ Development setup:
 - [x] Python policy plugins
 - [x] Gemini CLI host adapter
 - [x] Real-time model performance tracking
+- [x] Performance-aware routing (active model switching based on tracked data)
+- [x] Expanded stats UX (host/capability/source filters, JSON export, ranked performers)
+- [x] Data store hardening (schema v2, migration, source-aware pruning)
+- [x] Release workflow hardening (concurrency, idempotent publish)
 - [ ] Additional host adapters
 
 ## License
