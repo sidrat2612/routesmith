@@ -5,14 +5,14 @@ build-backend = "hatchling.build"
 [project]
 name = "routesmith"
 version = "0.1.2"
-description = "Host-aware auto-routing skill library for IDEs and coding agents."
+description = "Auto-route coding agent tasks to the best model in your IDE. Python library + MCP server for Claude Code, Codex, Copilot, Cursor, and Aider."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
     { name = "routesmith contributors" },
 ]
-keywords = ["ai", "routing", "ide", "coding-agents", "skill-library"]
+keywords = ["ai-agents", "coding-agents", "model-routing", "mcp", "mcp-server", "llm", "claude-code", "codex", "copilot", "aider", "cursor", "host-aware"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
