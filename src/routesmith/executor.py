@@ -28,7 +28,14 @@ class Executor:
     def __init__(self, config: SkillConfig | None = None) -> None:
         self.config = config or load_config()
         self.planner = Planner()
-        self.performance_tracker = PerformanceTracker()
+        max_age_seconds = None
+        if self.config.performance_max_age_days is not None:
+            max_age_seconds = self.config.performance_max_age_days * 86400
+        self.performance_tracker = PerformanceTracker(
+            path=self.config.performance_store_file,
+            max_records=self.config.performance_max_records,
+            max_age_seconds=max_age_seconds,
+        )
 
     def explain(self, prompt: str) -> RoutePlan:
         """Explain the route plan without executing."""
@@ -38,7 +45,7 @@ class Executor:
 
         plan = self.planner.plan(prompt, host_name=detection.host_name)
 
-        router = Router(adapter, config=self.config)
+        router = Router(adapter, config=self.config, performance_tracker=self.performance_tracker)
         plan = router.resolve_plan(plan)
 
         # Generate advisory
@@ -72,7 +79,7 @@ class Executor:
 
         # Route (timed)
         t_route_start = time.perf_counter()
-        router = Router(adapter, config=self.config)
+        router = Router(adapter, config=self.config, performance_tracker=self.performance_tracker)
         plan = router.resolve_plan(plan)
 
         # Handle pinned model
@@ -120,7 +127,12 @@ class Executor:
         )
 
         # Record performance data
-        self.performance_tracker.record_run(plan, task_results)
+        self.performance_tracker.record_run(
+            plan,
+            task_results,
+            host_name=detection.host_name,
+            source="runtime",
+        )
 
         # Inject performance advisory
         perf_advisory = self.performance_tracker.get_performance_advisory()

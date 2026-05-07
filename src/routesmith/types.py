@@ -139,6 +139,7 @@ class SkillConfig(BaseModel):
         if normalized not in {p.value for p in RoutingPreference}:
             return RoutingPreference.BALANCED.value
         return normalized
+
     debug: bool = False
     telemetry_enabled: bool = False
     forced_host: str | None = None
@@ -146,6 +147,10 @@ class SkillConfig(BaseModel):
     show_metrics: bool = True
     save_routes: bool = False
     routes_dir: str = ".routesmith/routes"
+    performance_routing_enabled: bool = True
+    performance_store_file: str = ".routesmith/performance.json"
+    performance_max_records: int = 500
+    performance_max_age_days: float | None = None
     config_file: str | None = None
     policy_overrides: dict[str, str] = Field(default_factory=dict)
     policy_plugins: list[str] = Field(default_factory=list)

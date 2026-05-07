@@ -2,7 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.5] - Unreleased
+## [0.1.6] - Unreleased
+
+### Added
+- Performance-aware routing that uses tracked success and latency to de-prioritize weaker models by capability class.
+- Expanded `routesmith stats` filters for host, capability, and telemetry source, plus top/bottom performer views and JSON export.
+- New `routesmith.performance` MCP tool for exportable performance summaries.
+- Configurable performance store settings for file location, routing enablement, record caps, and age-based pruning.
+
+### Changed
+- Performance telemetry now uses schema version 2 with host/source metadata, migration support, and source-aware pruning controls.
+- Release workflow hardening now adds concurrency control, repo-explicit asset uploads, and idempotent PyPI reruns.
+
+## [0.1.5] - 2026-05-07
 
 ### Added
 - Real-time model performance tracking with rolling-window persistence.

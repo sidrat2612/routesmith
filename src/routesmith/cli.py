@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import typer
 from rich.console import Console
 from rich.panel import Panel
@@ -241,22 +243,71 @@ def serve_stdio_cmd() -> None:
 @app.command("stats")
 def stats_cmd(
     model: str | None = typer.Option(None, "--model", "-m", help="Filter stats by model name."),
+    host: str | None = typer.Option(None, "--host", help="Filter stats by host name."),
+    capability: str | None = typer.Option(None, "--capability", help="Filter stats by capability class."),
+    source: str = typer.Option("runtime", "--source", help="Filter by telemetry source: runtime, synthetic, or all."),
+    top: int = typer.Option(3, "--top", help="Show the top N performers."),
+    bottom: int = typer.Option(3, "--bottom", help="Show the bottom N performers."),
+    output_format: str = typer.Option("table", "--format", help="Output format: table or json."),
     clear: bool = typer.Option(False, "--clear", help="Clear all tracked performance data."),
+    prune: bool = typer.Option(False, "--prune", help="Prune stored performance records before showing stats."),
+    max_records: int | None = typer.Option(None, "--max-records", help="Keep only the newest N records when pruning."),
+    max_age_days: float | None = typer.Option(None, "--max-age-days", help="Prune records older than N days."),
 ) -> None:
     """Show real-time model performance statistics."""
     from routesmith.performance import PerformanceTracker
 
-    tracker = PerformanceTracker()
+    config = load_config()
+    tracker = _create_performance_tracker(config)
+
+    normalized_format = output_format.strip().lower()
+    if normalized_format not in {"table", "json"}:
+        raise typer.BadParameter("--format must be either 'table' or 'json'.")
 
     if clear:
-        tracker.clear()
-        console.print("[green]Performance data cleared.[/green]")
+        removed = tracker.clear(source=source)
+        console.print(f"[green]Cleared {removed} performance record(s) from source={source}.[/green]")
         return
 
-    stats = tracker.get_model_stats(model=model)
+    resolved_max_age_seconds = None
+    if max_age_days is not None:
+        resolved_max_age_seconds = max_age_days * 86400
+
+    if prune:
+        removed = tracker.prune(
+            max_records=max_records if max_records is not None else tracker.max_records,
+            max_age_seconds=resolved_max_age_seconds if resolved_max_age_seconds is not None else tracker.max_age_seconds,
+            source=source,
+        )
+        console.print(f"[green]Pruned {removed} performance record(s).[/green]")
+
+    summary = tracker.summary_dict(
+        model=model,
+        host_name=host,
+        capability=capability,
+        source=source,
+        top=top,
+        bottom=bottom,
+    )
+
+    if normalized_format == "json":
+        console.print(json.dumps(summary, indent=2, default=str))
+        return
+
+    stats = summary["models"]
     if not stats:
         console.print("[dim]No performance data recorded yet. Run some tasks first.[/dim]")
         return
+
+    filter_bits = [f"source={summary['filters']['source']}"]
+    if summary["filters"]["host"]:
+        filter_bits.append(f"host={summary['filters']['host']}")
+    if summary["filters"]["capability"]:
+        filter_bits.append(f"capability={summary['filters']['capability']}")
+    if summary["filters"]["model"]:
+        filter_bits.append(f"model={summary['filters']['model']}")
+    console.print(f"[dim]Filters: {', '.join(filter_bits)}[/dim]")
+    console.print()
 
     table = Table(title="Model Performance")
     table.add_column("Model", style="cyan")
@@ -269,22 +320,48 @@ def stats_cmd(
     table.add_column("Max (ms)", justify="right")
 
     for s in stats:
-        rate_color = "green" if s.success_rate >= 0.9 else ("yellow" if s.success_rate >= 0.7 else "red")
+        rate_color = "green" if s["success_rate"] >= 0.9 else ("yellow" if s["success_rate"] >= 0.7 else "red")
         table.add_row(
-            s.model,
-            str(s.total_tasks),
-            str(s.successes),
-            str(s.failures),
-            f"[{rate_color}]{s.success_rate:.0%}[/{rate_color}]",
-            f"{s.avg_duration_ms:.1f}",
-            f"{s.min_duration_ms:.1f}",
-            f"{s.max_duration_ms:.1f}",
+            s["model"],
+            str(s["total_tasks"]),
+            str(s["successes"]),
+            str(s["failures"]),
+            f"[{rate_color}]{s['success_rate']:.0%}[/{rate_color}]",
+            f"{s['avg_duration_ms']:.1f}",
+            f"{s['min_duration_ms']:.1f}",
+            f"{s['max_duration_ms']:.1f}",
         )
 
     console.print(table)
 
+    if summary["by_host"] and len(summary["by_host"]) > 1:
+        console.print()
+        host_table = Table(title="Host Breakdown")
+        host_table.add_column("Host", style="cyan")
+        host_table.add_column("Tasks", justify="right")
+        host_table.add_column("Rate", justify="right")
+        host_table.add_column("Avg (ms)", justify="right")
+        host_table.add_column("Models", justify="right")
+        for host_name, host_stats in summary["by_host"].items():
+            host_table.add_row(
+                host_name,
+                str(host_stats["total_tasks"]),
+                f"{host_stats['success_rate']:.0%}",
+                f"{host_stats['avg_duration_ms']:.1f}",
+                str(len(host_stats["models_used"])),
+            )
+        console.print(host_table)
+
+    if len(stats) > 1 and summary["top_performers"]:
+        console.print()
+        _display_ranked_models("Top Performers", summary["top_performers"])
+
+    if len(stats) > 1 and summary["bottom_performers"]:
+        console.print()
+        _display_ranked_models("Bottom Performers", summary["bottom_performers"])
+
     # Show advisory if any
-    advisory = tracker.get_performance_advisory()
+    advisory = summary["advisory"]
     if advisory:
         console.print()
         for msg in advisory:
@@ -397,6 +474,38 @@ def history(
             route["prompt"][:60] + ("..." if len(route["prompt"]) > 60 else ""),
         )
 
+    console.print(table)
+
+
+def _create_performance_tracker(config: SkillConfig):
+    max_age_seconds = None
+    if config.performance_max_age_days is not None:
+        max_age_seconds = config.performance_max_age_days * 86400
+    from routesmith.performance import PerformanceTracker
+
+    return PerformanceTracker(
+        path=config.performance_store_file,
+        max_records=config.performance_max_records,
+        max_age_seconds=max_age_seconds,
+    )
+
+
+def _display_ranked_models(title: str, ranked_models: list[dict]) -> None:
+    table = Table(title=title, border_style="blue")
+    table.add_column("Model", style="cyan")
+    table.add_column("Score", justify="right")
+    table.add_column("Rate", justify="right")
+    table.add_column("Avg (ms)", justify="right")
+    table.add_column("Tasks", justify="right")
+
+    for stat in ranked_models:
+        table.add_row(
+            stat["model"],
+            f"{stat['score']:.3f}",
+            f"{stat['success_rate']:.0%}",
+            f"{stat['avg_duration_ms']:.1f}",
+            str(stat["total_tasks"]),
+        )
     console.print(table)
 
 

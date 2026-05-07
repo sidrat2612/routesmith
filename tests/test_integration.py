@@ -229,6 +229,24 @@ policy_plugins = ["tests.sample_policy_plugin:PreferBalancedPlanningPlugin"]
                     "tests.sample_policy_plugin:PreferBalancedPlanningPlugin"
                 ]
 
+    def test_loads_performance_store_settings_from_toml(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_content = """[routesmith]
+performance_routing_enabled = false
+performance_store_file = ".routesmith/custom-performance.json"
+performance_max_records = 42
+performance_max_age_days = 7
+"""
+            config_path = Path(tmpdir) / ".routesmith.toml"
+            config_path.write_text(config_content)
+
+            with patch("routesmith.config.Path.cwd", return_value=Path(tmpdir)):
+                config = load_config()
+                assert config.performance_routing_enabled is False
+                assert config.performance_store_file == ".routesmith/custom-performance.json"
+                assert config.performance_max_records == 42
+                assert config.performance_max_age_days == 7
+
 
 class TestMetricsComputation:
     """Test the metrics module directly."""

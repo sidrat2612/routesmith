@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from routesmith.hosts.base import BaseHostAdapter
+from routesmith.performance import PerformanceTracker
 from routesmith.policy import apply_policy_override, apply_routing_preference
 from routesmith.policy_plugins import (
     PolicyPluginContext,
@@ -22,6 +23,7 @@ class Router:
         policy_overrides: dict[str, str] | None = None,
         routing_preference: RoutingPreference | str | None = None,
         policy_plugins: list[str] | None = None,
+        performance_tracker: PerformanceTracker | None = None,
     ) -> None:
         self.adapter = adapter
         self.config = config
@@ -33,6 +35,7 @@ class Router:
             config.policy_plugins if config else []
         )
         self.policy_plugins, self.plugin_warnings = load_policy_plugins(plugin_specs)
+        self.performance_tracker = performance_tracker or PerformanceTracker()
 
     def resolve_plan(self, plan: RoutePlan) -> RoutePlan:
         """Resolve each task in the plan to a concrete model or strategy.
@@ -68,6 +71,14 @@ class Router:
                     routed_capability,
                     self.routing_preference,
                 )
+                suggested_model, performance_messages = self._apply_performance_routing(
+                    routed_capability,
+                    suggested_model,
+                    available_models,
+                    capabilities.host_name,
+                )
+            else:
+                performance_messages = []
 
             routed_capability, suggested_model, plugin_messages = self._apply_policy_plugins(
                 plan,
@@ -81,7 +92,7 @@ class Router:
 
             task.preferred_capability_class = routed_capability
 
-            for message in messages + preference_messages + plugin_messages:
+            for message in messages + preference_messages + performance_messages + plugin_messages:
                 if message not in plan.advisory and message not in extra_advisory:
                     extra_advisory.append(message)
 
@@ -147,6 +158,13 @@ class Router:
                         capability,
                         self.routing_preference,
                     )
+                    model, performance_messages = self._apply_performance_routing(
+                        capability,
+                        model,
+                        available_models,
+                        capabilities.host_name,
+                    )
+                    messages.extend(performance_messages)
 
             if result.suggested_model is not None:
                 if not can_switch:
@@ -165,3 +183,27 @@ class Router:
             messages.extend(f"[{plugin.name}] {note}" for note in result.advisory)
 
         return capability, model, messages
+
+    def _apply_performance_routing(
+        self,
+        capability: CapabilityClass,
+        suggested_model: str | None,
+        available_models: set[str],
+        host_name: str,
+    ) -> tuple[str | None, list[str]]:
+        """Prefer better-performing models when historical data is strong enough."""
+        if self.config and not self.config.performance_routing_enabled:
+            return suggested_model, []
+        if not suggested_model or not available_models:
+            return suggested_model, []
+
+        selected_model, reason = self.performance_tracker.select_model_for_capability(
+            capability,
+            available_models=sorted(available_models),
+            default_model=suggested_model,
+            host_name=host_name,
+        )
+        if not reason:
+            return selected_model, []
+
+        return selected_model, [reason]

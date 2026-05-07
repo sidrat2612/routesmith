@@ -15,6 +15,10 @@ on:
     types:
       - published
 
+concurrency:
+  group: publish-python-package-${{ github.event.release.tag_name || github.event.inputs.publish_to || github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Build distributions
@@ -77,7 +81,7 @@ jobs:
       - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" release-assets/* --clobber
+        run: gh release upload "${{ github.event.release.tag_name }}" release-assets/* --clobber --repo "${{ github.repository }}"
 
   publish-testpypi:
     name: Upload release to TestPyPI
@@ -121,3 +125,5 @@ jobs:
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@v1.14.0
+        with:
+          skip-existing: true

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "routesmith"
-version = "0.1.5"
+version = "0.1.6"
 description = "Auto-route coding agent tasks to the best model in your IDE. Python library + MCP server for Claude Code, Codex, Gemini CLI, Copilot, Cursor, and Aider."
 readme = "README.md"
 license = "MIT"

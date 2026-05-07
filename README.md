@@ -124,6 +124,10 @@ Dependencies are resolved automatically — tests wait for code, docs wait for i
 | `ROUTESMITH_ALLOW_MODEL_SWITCH` | Allow model switching | `true` |
 | `ROUTESMITH_FORCE_HOST` | Force a specific host | — |
 | `ROUTESMITH_DEBUG` | Enable debug output | `false` |
+| `ROUTESMITH_PERFORMANCE_ROUTING` | Enable performance-aware model selection | `true` |
+| `ROUTESMITH_PERFORMANCE_FILE` | Performance telemetry store path | `.routesmith/performance.json` |
+| `ROUTESMITH_PERFORMANCE_MAX_RECORDS` | Max stored telemetry records | `500` |
+| `ROUTESMITH_PERFORMANCE_MAX_AGE_DAYS` | Optional age-based pruning window | — |
 
 ### Config File
 
@@ -134,6 +138,7 @@ Recommended config shape:
 - Add a `[routesmith]` section with values such as `default_mode = "auto"`, `allow_model_switch = true`, and `routing_preference = "cost"` when you want cheaper model selection.
 - Add a `[routesmith.policy_overrides]` section when you want static remaps such as `planning = "balanced"` or `documentation = "fast"`.
 - Add a `policy_plugins` list when you want importable Python hooks such as `my_project.routing:plugin` or `my_project.routing:CustomPlugin` to participate in route resolution.
+- Add performance settings such as `performance_routing_enabled = true`, `performance_store_file = ".routesmith/performance.json"`, `performance_max_records = 500`, and `performance_max_age_days = 30` when you want tighter telemetry control.
 
 Built-in routing preferences are `balanced`, `cost`, and `quality`. `policy_overrides` handles static remaps, while `policy_plugins` lets you run real Python logic that can adjust capability classes, force explicit models, and attach advisory messages.
 
@@ -145,13 +150,17 @@ Start it with `routesmith serve-stdio`.
 
 This lets IDE extensions and agents call routesmith as a tool.
 
+The MCP surface now includes `routesmith.performance`, which returns filtered performance summaries for CLI and agent consumers.
+
 ## Performance Tracking
 
-routesmith records per-model task outcomes (duration, success/failure, capability class) across runs. Data is stored in `.routesmith/performance.json` and accumulates over time within a project.
+routesmith records per-model task outcomes across runs, including duration, success or failure, capability class, host, and telemetry source. Data is stored in `.routesmith/performance.json`, uses schema versioning with migration support, and separates runtime telemetry from synthetic test data.
 
-View stats with `routesmith stats`. Filter to a specific model with `routesmith stats --model claude-sonnet-4-6`. Clear tracked data with `routesmith stats --clear`.
+Performance-aware routing now promotes tracker data from passive advisory to an active routing signal. When a default model shows weak success or latency for a capability and a better host-available alternative has enough evidence, routesmith will switch to the stronger performer.
 
-When a model's historical success rate drops below 70% or average latency exceeds 5 seconds, routesmith injects performance advisory messages into run results automatically.
+View stats with `routesmith stats`. You can filter by model, host, capability, and telemetry source; show top and bottom performers; export JSON summaries; and prune old records with max-record or max-age controls.
+
+When a model's historical success rate drops below 70% or average latency exceeds 5 seconds, routesmith still injects performance advisory messages into run results automatically.
 
 ## Install Configs for Hosts
 

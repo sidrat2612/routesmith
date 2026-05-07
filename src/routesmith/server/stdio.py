@@ -10,6 +10,7 @@ from routesmith import __version__
 from routesmith.config import load_config
 from routesmith.executor import Executor
 from routesmith.hosts.detector import detect_host, get_host_capabilities
+from routesmith.performance import PerformanceTracker
 from routesmith.state import list_routes, get_last_route
 
 
@@ -56,6 +57,21 @@ MCP_TOOLS = [
             "type": "object",
             "properties": {
                 "limit": {"type": "integer", "default": 10, "description": "Max routes to return"},
+            },
+        },
+    },
+    {
+        "name": "routesmith.performance",
+        "description": "Return structured model performance summaries with filters and ranked performers.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "model": {"type": "string", "description": "Filter by model name"},
+                "host": {"type": "string", "description": "Filter by host name"},
+                "capability": {"type": "string", "description": "Filter by capability class"},
+                "source": {"type": "string", "enum": ["runtime", "synthetic", "all"], "default": "runtime"},
+                "top": {"type": "integer", "default": 3, "description": "Top performers to return"},
+                "bottom": {"type": "integer", "default": 3, "description": "Bottom performers to return"},
             },
         },
     },
@@ -113,6 +129,18 @@ def handle_request(request: dict[str, Any]) -> dict[str, Any]:
             caps = get_host_capabilities(config)
             return _success(req_id, caps.model_dump())
 
+        elif method == "performance":
+            tracker = _build_performance_tracker(config)
+            summary = tracker.summary_dict(
+                model=params.get("model"),
+                host_name=params.get("host"),
+                capability=params.get("capability"),
+                source=params.get("source", "runtime"),
+                top=params.get("top", 3),
+                bottom=params.get("bottom", 3),
+            )
+            return _success(req_id, summary)
+
         elif method == "ping":
             return _success(req_id, {"status": "ok", "version": __version__})
 
@@ -164,8 +192,33 @@ def _handle_tool_call(
             "content": [{"type": "text", "text": json.dumps(routes, default=str)}],
         })
 
+    elif tool_name == "routesmith.performance":
+        tracker = _build_performance_tracker(config)
+        summary = tracker.summary_dict(
+            model=arguments.get("model"),
+            host_name=arguments.get("host"),
+            capability=arguments.get("capability"),
+            source=arguments.get("source", "runtime"),
+            top=arguments.get("top", 3),
+            bottom=arguments.get("bottom", 3),
+        )
+        return _success(req_id, {
+            "content": [{"type": "text", "text": json.dumps(summary, default=str)}],
+        })
+
     else:
         return _error(req_id, -32602, f"Unknown tool: {tool_name}")
+
+
+def _build_performance_tracker(config: Any) -> PerformanceTracker:
+    max_age_seconds = None
+    if getattr(config, "performance_max_age_days", None) is not None:
+        max_age_seconds = config.performance_max_age_days * 86400
+    return PerformanceTracker(
+        path=getattr(config, "performance_store_file", PerformanceTracker.DEFAULT_PATH),
+        max_records=getattr(config, "performance_max_records", PerformanceTracker.MAX_RECORDS),
+        max_age_seconds=max_age_seconds,
+    )
 
 
 def _success(req_id: Any, result: Any) -> dict[str, Any]:

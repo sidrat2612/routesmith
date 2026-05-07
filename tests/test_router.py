@@ -1,10 +1,15 @@
 """Tests for the router."""
 
+import tempfile
+from pathlib import Path
+
 from routesmith.hosts.claude_code import ClaudeCodeHostAdapter
 from routesmith.hosts.copilot import CopilotHostAdapter
 from routesmith.hosts.generic import GenericHostAdapter
+from routesmith.performance import PerformanceTracker
 from routesmith.planner import Planner
 from routesmith.router import Router
+from routesmith.types import RoutePlan, TaskNode, TaskResult
 from routesmith.types import CapabilityClass, RoutingPreference, TaskType
 
 
@@ -102,6 +107,54 @@ class TestRouterWithSwitchableHost:
         assert coding_tasks
         assert coding_tasks[0].suggested_model == "claude-haiku-4-5"
         assert any("[prefer_fast_claude_coding]" in msg for msg in resolved.advisory)
+
+    def test_performance_aware_routing_deprioritizes_low_success_default_model(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tracker = PerformanceTracker(Path(tmpdir) / "performance.json")
+            for run_index in range(4):
+                plan = RoutePlan(
+                    original_prompt=f"synthetic run {run_index}",
+                    tasks=[
+                        TaskNode(
+                            id=f"sonnet-{run_index}",
+                            type=TaskType.CODING,
+                            title="Coding task",
+                            preferred_capability_class=CapabilityClass.CODING,
+                        ),
+                        TaskNode(
+                            id=f"haiku-{run_index}",
+                            type=TaskType.CODING,
+                            title="Coding task",
+                            preferred_capability_class=CapabilityClass.CODING,
+                        ),
+                    ],
+                )
+                tracker.record_run(
+                    plan,
+                    [
+                        TaskResult(
+                            task_id=f"sonnet-{run_index}",
+                            model_used="claude-sonnet-4-6",
+                            success=run_index == 0,
+                            duration_ms=6200,
+                        ),
+                        TaskResult(
+                            task_id=f"haiku-{run_index}",
+                            model_used="claude-haiku-4-5",
+                            success=True,
+                            duration_ms=1200,
+                        ),
+                    ],
+                )
+
+            router = Router(self.adapter, performance_tracker=tracker)
+            plan = self.planner.plan("implement a function", host_name="claude_code")
+            resolved = router.resolve_plan(plan)
+
+            coding_tasks = [t for t in resolved.tasks if t.type == TaskType.CODING]
+            assert coding_tasks
+            assert coding_tasks[0].suggested_model == "claude-haiku-4-5"
+            assert any("Performance-aware routing selected claude-haiku-4-5" in msg for msg in resolved.advisory)
 
 
 class TestRouterWithNonSwitchableHost:
