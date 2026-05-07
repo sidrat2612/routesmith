@@ -53,6 +53,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
       - name: Download distributions
         uses: actions/download-artifact@v6
         with:
