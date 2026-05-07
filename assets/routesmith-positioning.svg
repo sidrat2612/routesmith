@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="780" viewBox="0 0 1400 780" role="img" aria-labelledby="title desc">
+  <title id="title">RouteSmith market positioning diagram</title>
+  <desc id="desc">Diagram showing agent products, RouteSmith as routing layer, and API gateway infrastructure as separate layers.</desc>
+  <defs>
+    <style>
+      .title { font: 700 38px Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 500 20px Arial, sans-serif; fill: #475569; }
+      .lane-title { font: 700 24px Arial, sans-serif; fill: #ffffff; text-anchor: middle; }
+      .chip { fill: rgba(255,255,255,0.12); stroke: rgba(255,255,255,0.25); stroke-width: 1.5; }
+      .chip-text { font: 600 20px Arial, sans-serif; fill: #e2e8f0; text-anchor: middle; dominant-baseline: middle; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="780" fill="#f8fafc"/>
+  <text x="80" y="80" class="title">Where RouteSmith Fits</text>
+  <text x="80" y="115" class="subtitle">Not another coding agent. Not an API gateway. A routing layer between them.</text>
+
+  <rect x="60" y="170" rx="28" ry="28" width="1280" height="165" fill="#183456"/>
+  <text x="700" y="218" class="lane-title">Agent products</text>
+  <rect x="95" y="250" rx="18" ry="18" width="175" height="52" class="chip"/>
+  <rect x="295" y="250" rx="18" ry="18" width="150" height="52" class="chip"/>
+  <rect x="470" y="250" rx="18" ry="18" width="145" height="52" class="chip"/>
+  <rect x="640" y="250" rx="18" ry="18" width="155" height="52" class="chip"/>
+  <rect x="820" y="250" rx="18" ry="18" width="145" height="52" class="chip"/>
+  <rect x="990" y="250" rx="18" ry="18" width="220" height="52" class="chip"/>
+  <text x="182.5" y="276" class="chip-text">Claude Code</text>
+  <text x="370" y="276" class="chip-text">Cursor</text>
+  <text x="542.5" y="276" class="chip-text">Aider</text>
+  <text x="717.5" y="276" class="chip-text">Copilot</text>
+  <text x="892.5" y="276" class="chip-text">Codex</text>
+  <text x="1100" y="276" class="chip-text">Gemini CLI</text>
+
+  <rect x="60" y="390" rx="28" ry="28" width="1280" height="165" fill="#0f766e"/>
+  <text x="700" y="438" class="lane-title">Routing layer</text>
+  <rect x="120" y="470" rx="18" ry="18" width="185" height="52" class="chip"/>
+  <rect x="340" y="470" rx="18" ry="18" width="255" height="52" class="chip"/>
+  <rect x="630" y="470" rx="18" ry="18" width="235" height="52" class="chip"/>
+  <rect x="900" y="470" rx="18" ry="18" width="260" height="52" class="chip"/>
+  <text x="212.5" y="496" class="chip-text">RouteSmith</text>
+  <text x="467.5" y="496" class="chip-text">host-aware routing</text>
+  <text x="747.5" y="496" class="chip-text">task decomposition</text>
+  <text x="1030" y="496" class="chip-text">truthful switching</text>
+
+  <rect x="60" y="610" rx="28" ry="28" width="1280" height="165" fill="#334155"/>
+  <text x="700" y="658" class="lane-title">API / gateway infrastructure</text>
+  <rect x="100" y="690" rx="18" ry="18" width="155" height="52" class="chip"/>
+  <rect x="285" y="690" rx="18" ry="18" width="155" height="52" class="chip"/>
+  <rect x="470" y="690" rx="18" ry="18" width="235" height="52" class="chip"/>
+  <rect x="735" y="690" rx="18" ry="18" width="190" height="52" class="chip"/>
+  <rect x="955" y="690" rx="18" ry="18" width="250" height="52" class="chip"/>
+  <text x="177.5" y="716" class="chip-text">LiteLLM</text>
+  <text x="362.5" y="716" class="chip-text">Portkey</text>
+  <text x="587.5" y="716" class="chip-text">provider routing</text>
+  <text x="830" y="716" class="chip-text">governance</text>
+  <text x="1080" y="716" class="chip-text">observability</text>
+</svg>

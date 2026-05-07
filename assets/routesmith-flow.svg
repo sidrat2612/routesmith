@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="460" viewBox="0 0 1400 460" role="img" aria-labelledby="title desc">
+  <title id="title">RouteSmith routing flow</title>
+  <desc id="desc">Flow diagram showing host detection, task classification, capability mapping, routing, execution, and telemetry feedback.</desc>
+  <defs>
+    <style>
+      .title { font: 700 36px Arial, sans-serif; fill: #0f172a; }
+      .box-label { font: 700 22px Arial, sans-serif; fill: #eff6ff; text-anchor: middle; }
+      .box-body { font: 400 17px Arial, sans-serif; fill: #dbeafe; text-anchor: middle; }
+      .note { font: 500 17px Arial, sans-serif; fill: #334155; text-anchor: middle; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b7fff"/>
+    </marker>
+  </defs>
+
+  <rect width="1400" height="460" fill="#f8fafc"/>
+  <text x="60" y="70" class="title">How RouteSmith Routes Work</text>
+
+  <g>
+    <rect x="60" y="145" rx="18" ry="18" width="200" height="112" fill="#1e3a5f"/>
+    <text x="160" y="188" class="box-label">Detect Host</text>
+    <text x="160" y="220" class="box-body">Claude Code, Cursor,</text>
+    <text x="160" y="246" class="box-body">Copilot, Aider...</text>
+  </g>
+
+  <g>
+    <rect x="320" y="145" rx="18" ry="18" width="200" height="112" fill="#21496a"/>
+    <text x="420" y="188" class="box-label">Classify Prompt</text>
+    <text x="420" y="220" class="box-body">planning, coding,</text>
+    <text x="420" y="246" class="box-body">testing, docs</text>
+  </g>
+
+  <g>
+    <rect x="580" y="145" rx="18" ry="18" width="200" height="112" fill="#255b77"/>
+    <text x="680" y="188" class="box-label">Map Capability</text>
+    <text x="680" y="220" class="box-body">deep_reasoning,</text>
+    <text x="680" y="246" class="box-body">coding, fast</text>
+  </g>
+
+  <g>
+    <rect x="840" y="145" rx="18" ry="18" width="200" height="112" fill="#2d6d7f"/>
+    <text x="940" y="188" class="box-label">Route</text>
+    <text x="940" y="220" class="box-body">switch if possible,</text>
+    <text x="940" y="246" class="box-body">fallback if not</text>
+  </g>
+
+  <g>
+    <rect x="1100" y="145" rx="18" ry="18" width="200" height="112" fill="#347b72"/>
+    <text x="1200" y="188" class="box-label">Execute</text>
+    <text x="1200" y="220" class="box-body">preserve order,</text>
+    <text x="1200" y="246" class="box-body">return advisory</text>
+  </g>
+
+  <path d="M270 201 H310" stroke="#5b7fff" stroke-width="5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M530 201 H570" stroke="#5b7fff" stroke-width="5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M790 201 H830" stroke="#5b7fff" stroke-width="5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M1050 201 H1090" stroke="#5b7fff" stroke-width="5" fill="none" marker-end="url(#arrow)"/>
+
+  <g>
+    <rect x="430" y="325" rx="18" ry="18" width="540" height="96" fill="#e0f2fe" stroke="#7dd3fc" stroke-width="2"/>
+    <text x="700" y="365" class="note">Telemetry feedback loop</text>
+    <text x="700" y="392" class="note">success rate, latency, host, source, capability</text>
+  </g>
+
+  <path d="M1200 267 C1200 320, 1040 330, 980 338" stroke="#5b7fff" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M430 338 C370 330, 620 285, 830 267" stroke="#5b7fff" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+</svg>
