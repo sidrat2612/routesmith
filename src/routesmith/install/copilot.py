@@ -41,6 +41,34 @@ In Copilot/VS Code:
 - `coding` - Implementation, testing, refactoring
 - `balanced` - Documentation, general tasks
 - `fast` - Formatting, simple transformations
+
+## Task Delegation
+
+When splitting work into subtasks, use the cheapest capability tier that can handle the task:
+- `fast` for bulk mechanical changes
+- `balanced` for summarization and scoped research
+- `coding` for implementation and test fixes
+- `deep_reasoning` only for planning and tradeoffs
+
+### Spawn Rules
+
+- Treat the fastest tier as non-recursive: if it needs another subtask, return to the parent.
+- Max spawn depth: {max_spawn_depth}.
+- If a subtask needs deeper reasoning, escalate back to the parent instead of self-escalating.
+
+## Preferred Tools
+
+- Public pages -> text-first fetch tools
+- Dynamic/auth-walled pages -> browser automation only when needed
+- PDFs -> extract text first
+- Repeated fetch patterns -> wrap as reusable tools
+
+## Context Management
+
+- Use #file references to include only relevant files instead of the full workspace.
+- Keep prompts scoped to one concrete task where possible.
+- Avoid generated files, build outputs, and other noisy context.
+- Use this file for persistent project context instead of repeating the same instructions every turn.
 """
 
 PROMPT_FILE_CONTENT = """\
@@ -70,7 +98,7 @@ class CopilotInstaller(BaseInstaller):
 
         path = self._write_file(
             ".github/copilot-instructions.md",
-            COPILOT_INSTRUCTIONS_CONTENT,
+            COPILOT_INSTRUCTIONS_CONTENT.replace("{max_spawn_depth}", str(self.config.max_spawn_depth)),
         )
         files_created.append(path)
 

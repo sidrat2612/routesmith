@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Sequence
 
@@ -101,7 +102,6 @@ def classify_prompt(prompt: str) -> list[tuple[TaskType, float]]:
                 match_count += 1
         if match_count > 0:
             # Normalize: average weight * (1 + log bonus for multiple matches)
-            import math
             normalized = (type_score / match_count) * (1 + 0.2 * math.log(1 + match_count))
             scores[task_type] = min(normalized, 1.0)
 

@@ -73,6 +73,7 @@ class AiderHostAdapter(BaseHostAdapter):
             supports_repo_instructions=True,
             supports_settings_edit=True,
             supports_env_override=True,
+            supports_context_management=True,
             model_family="mixed",
             notes=[
                 "Aider supports multiple providers (Anthropic, OpenAI, etc.).",

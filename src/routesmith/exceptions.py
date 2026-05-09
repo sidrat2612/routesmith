@@ -1,37 +1,37 @@
 """Custom exceptions for routesmith."""
 
 
-class RouterSmitError(Exception):
+class RoutesmithError(Exception):
     """Base exception for routesmith."""
 
 
-class HostDetectionError(RouterSmitError):
+class HostDetectionError(RoutesmithError):
     """Raised when host detection fails critically."""
 
 
-class ModelSwitchError(RouterSmitError):
+class ModelSwitchError(RoutesmithError):
     """Raised when a model switch attempt fails."""
 
 
-class PlannerError(RouterSmitError):
+class PlannerError(RoutesmithError):
     """Raised when the planner cannot decompose a prompt."""
 
 
-class PolicyError(RouterSmitError):
+class PolicyError(RoutesmithError):
     """Raised when policy resolution fails."""
 
 
-class ExecutionError(RouterSmitError):
+class ExecutionError(RoutesmithError):
     """Raised when task execution fails."""
 
 
-class ConfigurationError(RouterSmitError):
+class ConfigurationError(RoutesmithError):
     """Raised when configuration is invalid."""
 
 
-class InstallError(RouterSmitError):
+class InstallError(RoutesmithError):
     """Raised when an install operation fails."""
 
 
-class ProviderError(RouterSmitError):
+class ProviderError(RoutesmithError):
     """Raised when a provider operation fails."""

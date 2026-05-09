@@ -5,7 +5,7 @@ import string
 import pytest
 
 from routesmith.planner import Planner, classify_prompt, CONFIDENCE_THRESHOLD
-from routesmith.types import CapabilityClass, TaskType
+from routesmith.types import CapabilityClass, HostCapabilities, SkillConfig, TaskType
 
 
 class TestPlannerProperties:
@@ -109,3 +109,41 @@ class TestPlannerProperties:
         plan = self.planner.plan("plan, implement, test, document everything")
         for task in plan.tasks:
             assert task.priority >= 1
+
+
+class TestTypeProperties:
+    """Property checks for core configuration types."""
+
+    def test_skill_config_defaults_include_context_controls(self):
+        config = SkillConfig()
+        assert config.context_window_limit is True
+        assert config.autocompact_threshold == 80
+        assert config.max_spawn_depth == 2
+
+    def test_host_capabilities_context_management_defaults_false(self):
+        capabilities = HostCapabilities(host_name="test")
+        assert capabilities.supports_context_management is False
+
+    def test_autocompact_threshold_clamps_below_zero(self):
+        config = SkillConfig(autocompact_threshold=-10)
+        assert config.autocompact_threshold == 0
+
+    def test_autocompact_threshold_clamps_above_hundred(self):
+        config = SkillConfig(autocompact_threshold=200)
+        assert config.autocompact_threshold == 100
+
+    def test_autocompact_threshold_accepts_valid_value(self):
+        config = SkillConfig(autocompact_threshold=50)
+        assert config.autocompact_threshold == 50
+
+    def test_max_spawn_depth_clamps_below_one(self):
+        config = SkillConfig(max_spawn_depth=-3)
+        assert config.max_spawn_depth == 1
+
+    def test_max_spawn_depth_clamps_zero_to_one(self):
+        config = SkillConfig(max_spawn_depth=0)
+        assert config.max_spawn_depth == 1
+
+    def test_max_spawn_depth_accepts_valid_value(self):
+        config = SkillConfig(max_spawn_depth=5)
+        assert config.max_spawn_depth == 5

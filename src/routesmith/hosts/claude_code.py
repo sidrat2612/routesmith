@@ -77,6 +77,7 @@ class ClaudeCodeHostAdapter(BaseHostAdapter):
             supports_repo_instructions=True,
             supports_settings_edit=True,
             supports_env_override=True,
+            supports_context_management=True,
             model_family="anthropic",
             notes=[
                 "Claude Code supports Claude-family models only.",

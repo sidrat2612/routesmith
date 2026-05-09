@@ -53,7 +53,10 @@ def _parse_toml_fallback(path: Path) -> dict[str, Any]:
             return value.lower() == "true"
         if value.isdigit():
             return int(value)
-        return value
+        try:
+            return float(value)
+        except ValueError:
+            return value
 
     def _get_section_target(section: list[str]) -> dict[str, Any]:
         target = result
@@ -144,6 +147,24 @@ def load_config() -> SkillConfig:
             "ROUTESMITH_PERFORMANCE_MAX_AGE_DAYS",
             None,
             float,
+        ),
+        context_window_limit=_get(
+            "context_window_limit",
+            "ROUTESMITH_CONTEXT_WINDOW_LIMIT",
+            True,
+            bool,
+        ),
+        autocompact_threshold=_get(
+            "autocompact_threshold",
+            "ROUTESMITH_AUTOCOMPACT_THRESHOLD",
+            80,
+            int,
+        ),
+        max_spawn_depth=_get(
+            "max_spawn_depth",
+            "ROUTESMITH_MAX_SPAWN_DEPTH",
+            2,
+            int,
         ),
         config_file=config_file,
         policy_overrides=file_config.get("policy_overrides", {}),

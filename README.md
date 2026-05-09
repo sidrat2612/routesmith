@@ -137,14 +137,54 @@ Dependencies are resolved automatically — tests wait for code, docs wait for i
 | `ROUTESMITH_PERFORMANCE_FILE` | Performance telemetry store path | `.routesmith/performance.json` |
 | `ROUTESMITH_PERFORMANCE_MAX_RECORDS` | Max stored telemetry records | `500` |
 | `ROUTESMITH_PERFORMANCE_MAX_AGE_DAYS` | Optional age-based pruning window | — |
+| `ROUTESMITH_CONTEXT_WINDOW_LIMIT` | Prefer leaner context defaults for supported hosts | `true` |
+| `ROUTESMITH_AUTOCOMPACT_THRESHOLD` | Auto-compaction threshold percentage for supported hosts | `80` |
+| `ROUTESMITH_MAX_SPAWN_DEPTH` | Advisory max subagent nesting depth written into host configs | `2` |
 
 ### Config File
 
 Create `.routesmith.toml` in your project root:
 
+Example:
+
+```toml
+[routesmith]
+default_mode = "auto"
+allow_model_switch = true
+routing_preference = "cost"
+
+# Performance-aware routing
+performance_routing_enabled = true
+performance_store_file = ".routesmith/performance.json"
+performance_max_records = 500
+performance_max_age_days = 30
+
+# Token-efficiency knobs
+context_window_limit = true
+autocompact_threshold = 80
+max_spawn_depth = 2
+
+# Optional Python hooks
+policy_plugins = [
+  "my_project.routing:plugin",
+  "my_project.routing:CustomPlugin",
+]
+
+[routesmith.policy_overrides]
+planning = "balanced"
+documentation = "fast"
+```
+
+What the new knobs do:
+
+- `context_window_limit = true` tells install adapters to prefer leaner context defaults when the host exposes a real setting. Today this produces concrete settings for Claude Code and advisory guidance for the other hosts.
+- `autocompact_threshold = 80` lowers the context usage percentage at which auto-compaction should kick in for hosts that support it. Today Claude Code uses this to write `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`.
+- `max_spawn_depth = 2` controls the advisory spawn-depth limit written into generated host instruction files so subagents do not recurse into wasteful coordination trees.
+
 Recommended config shape:
 
 - Add a `[routesmith]` section with values such as `default_mode = "auto"`, `allow_model_switch = true`, and `routing_preference = "cost"` when you want cheaper model selection.
+- Add token-efficiency settings such as `context_window_limit`, `autocompact_threshold`, and `max_spawn_depth` when you want generated host configs to bias toward smaller contexts and shallower delegation.
 - Add a `[routesmith.policy_overrides]` section when you want static remaps such as `planning = "balanced"` or `documentation = "fast"`.
 - Add a `policy_plugins` list when you want importable Python hooks such as `my_project.routing:plugin` or `my_project.routing:CustomPlugin` to participate in route resolution.
 - Add performance settings such as `performance_routing_enabled = true`, `performance_store_file = ".routesmith/performance.json"`, `performance_max_records = 500`, and `performance_max_age_days = 30` when you want tighter telemetry control.
@@ -175,12 +215,12 @@ When a model's historical success rate drops below 70% or average latency exceed
 
 Generate host-specific configuration files:
 
-- `routesmith install claude` writes `CLAUDE.md`.
+- `routesmith install claude` writes `CLAUDE.md` and merges token-saving settings into `.claude/settings.json`.
 - `routesmith install codex` writes `AGENTS.md`.
 - `routesmith install gemini` writes `GEMINI.md`.
 - `routesmith install copilot` writes `.github/copilot-instructions.md`.
-- `routesmith install cursor` writes `.cursorrules`.
-- `routesmith install aider` writes `.aider.conf.yml`.
+- `routesmith install cursor` writes `.cursorules`.
+- `routesmith install aider` writes `.aider.conf.yml`, or `.aider.routesmith.yml` if an existing Aider config is already present.
 
 ## Auto Mode (Default)
 

@@ -49,7 +49,11 @@ class Executor:
         plan = router.resolve_plan(plan)
 
         # Generate advisory
-        advisory = generate_advisory(plan, capabilities)
+        advisory = generate_advisory(
+            plan,
+            capabilities,
+            max_spawn_depth=self.config.max_spawn_depth,
+        )
         plan.advisory.extend(advisory)
 
         # Review
@@ -90,7 +94,12 @@ class Executor:
                 task.suggested_model = model
 
         # Generate advisory
-        advisory = generate_advisory(plan, capabilities, pinned_model=pinned_model)
+        advisory = generate_advisory(
+            plan,
+            capabilities,
+            pinned_model=pinned_model,
+            max_spawn_depth=self.config.max_spawn_depth,
+        )
         plan.advisory.extend(advisory)
         t_route_end = time.perf_counter()
 

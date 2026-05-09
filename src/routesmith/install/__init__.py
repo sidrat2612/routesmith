@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+from routesmith.config import load_config
 from routesmith.install.base import BaseInstaller
-from routesmith.types import InstallResult
+from routesmith.types import InstallResult, SkillConfig
 
 
-def run_install(target: str) -> InstallResult:
+def run_install(
+    target: str,
+    *,
+    root: Path | None = None,
+    config: SkillConfig | None = None,
+) -> InstallResult:
     """Run install for a given target host."""
     installers: dict[str, type[BaseInstaller]] = _get_installers()
 
@@ -20,7 +28,7 @@ def run_install(target: str) -> InstallResult:
             warnings=[f"Unknown target: {target}. Supported: {', '.join(installers.keys())}"],
         )
 
-    installer = installer_cls()
+    installer = installer_cls(root=root, config=config or load_config())
     return installer.install()
 
 

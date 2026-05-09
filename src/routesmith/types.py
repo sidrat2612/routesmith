@@ -99,6 +99,7 @@ class HostCapabilities(BaseModel):
     supports_repo_instructions: bool = False
     supports_settings_edit: bool = False
     supports_env_override: bool = False
+    supports_context_management: bool = False
     model_family: str = "unknown"
     notes: list[str] = Field(default_factory=list)
 
@@ -151,6 +152,20 @@ class SkillConfig(BaseModel):
     performance_store_file: str = ".routesmith/performance.json"
     performance_max_records: int = 500
     performance_max_age_days: float | None = None
+    context_window_limit: bool = True
+    autocompact_threshold: int = 80
+    max_spawn_depth: int = 2
+
+    @field_validator("autocompact_threshold", mode="before")
+    @classmethod
+    def _clamp_autocompact_threshold(cls, v: Any) -> int:
+        return max(0, min(100, int(v)))
+
+    @field_validator("max_spawn_depth", mode="before")
+    @classmethod
+    def _clamp_max_spawn_depth(cls, v: Any) -> int:
+        return max(1, int(v))
+
     config_file: str | None = None
     policy_overrides: dict[str, str] = Field(default_factory=dict)
     policy_plugins: list[str] = Field(default_factory=list)

@@ -98,7 +98,12 @@ def serve_stdio() -> None:
     run_stdio_server()
 
 
-def install(target: str) -> InstallResult:
+def install(
+    target: str,
+    *,
+    root: Path | None = None,
+    config: SkillConfig | None = None,
+) -> InstallResult:
     """Install routesmith configuration for a target host."""
     from routesmith.install import run_install
-    return run_install(target)
+    return run_install(target, root=root, config=config)

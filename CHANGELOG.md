@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.8] - 2026-05-09
+
+### Fixed
+- Renamed base exception class from `RouterSmitError` to `RoutesmithError` (typo fix).
+- Removed unused `import time` from `metrics.py` and `import os` from `state.py`.
+- Moved `import math` from inside function body to module level in `planner.py`.
+- Fixed TOML fallback parser not parsing float values (e.g. `7.5` stayed as a string).
+
+### Changed
+- `hosts/__init__.py` now exports all host adapters (Aider, ClaudeCode, Codex, Copilot, Cursor, GeminiCLI, Generic) instead of only GeminiCLI.
+
+## [0.1.7] - 2026-05-09
+
+### Added
+- Token-efficient install guidance for Claude Code, Codex, Gemini CLI, Copilot, Cursor, VS Code, and Aider with delegation tiers, spawn depth rules, preferred tool selection, and context-management recommendations.
+- Project-scoped Claude Code settings generation for `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` and `CLAUDE_CODE_DISABLE_1M_CONTEXT`, merged additively into `.claude/settings.json`.
+- Concrete Aider context defaults for chat history limits, prompt caching, and repo-map size.
+- New `SkillConfig` fields for `context_window_limit`, `autocompact_threshold`, and `max_spawn_depth`.
+- New `HostCapabilities.supports_context_management` flag.
+- Delegation-tier, task-complexity, and tool-cost advisories.
+- Install adapter tests covering Claude, Codex, Gemini, Copilot, Cursor, and Aider token-saving config output.
+
+### Changed
+- Aider installs now write `.aider.conf.yml` when safe and fall back to `.aider.routesmith.yml` when an existing config is already present.
+
 ## [0.1.6] - Unreleased
 
 ### Added
